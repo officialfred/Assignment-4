@@ -1,7 +1,7 @@
 mapboxgl.accessToken = 'pk.eyJ1IjoiY3dob25nIiwiYSI6IjAyYzIwYTJjYTVhMzUxZTVkMzdmYTQ2YzBmMTM0ZDAyIn0.owNd_Qa7Sw2neNJbK6zc1A'
 
 // lngLat for the Downtown Oakland
-var oakCenter = [-122.2712, 37.76]
+var oakCenter = [-122.2712, 37.76];
 
 // Set bounds to Oakland.
 const bounds = [
@@ -9,58 +9,122 @@ const bounds = [
     [-122.0, 37.9] // Northeast coordinates
 ];
 
+// Fetch today's date for API requests
+var today = new Date();
+var dd = String(today.getDate()).padStart(2, '0');
+var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+var yyyy = today.getFullYear();
+
+// set today's date from 5 years ago
+var yyyy = yyyy-5;
+var five_years_back = "'" + yyyy + '-' + mm + '-' + dd + "'";
+
 // Load data
-$.getJSON('./data/oak.geojson', function(rawData) {
+// rows to select; part of starturl; DO NOT incorporate into request urls
+var selection = "%20datetimeinit,%20description,%20reqcategory,%20beat";
 
-  var map = new mapboxgl.Map({
-    container: 'mapContainer', // HTML container id
-    style: 'mapbox://styles/mapbox/dark-v9', // style URL
-    center: oakCenter, // starting position as [lng, lat]
-    zoom: 10,
-    minZoom: 9,
-    maxZoom: 14,
-    maxBounds: bounds // limit map bounds
-  });
+// start + end urls
+var starturl = "https://data.oaklandca.gov/resource/quth-gb8e.json?$query=SELECT" + selection + "%20WHERE%20";
+var endurl = "AND%20datetimeinit>" + five_years_back + "%20LIMIT%2050000";
 
-  map.on('load', function() {
-    map.addSource('oak', {
-      type: 'geojson',
-      data: rawData,
-    })
+// illegal dumping + hopmeless encampment urls
+var dumpurl = starturl + "reqcategory='ILLDUMP'%20" + endurl;
+var encampment_url = starturl + "description='Homeless%20Encampment'%20" + endurl;
 
-    map.addLayer({
-      id: 'homeless_encampments',
-      type: 'fill',
-      source: 'oak',
-      'layout': {
-        visibility: 'none', //Layers load invisible, to show only when toggled
-      },
-      paint: {
-        'fill-color': [
-          'interpolate',
-          ['linear'],
-          ['get', 'encampment_count'],
-          0,
-          '#f6e2ff',
-          300,
-          '#edc4ff',
-          600,
-          '#e19dff',
-          900,
-          '#d26dff',
-          1200,
-          '#c543ff',
-          1500,
-          '#9b00e1',
-        ],
-        'fill-opacity': 0.7
-      }
-    })
+// crime data comes from a different source
+var violent_crime_selection = "('ASSAULT',%20'FORCIBLE%20RAPE',%20'ROBBERY',%20'FELONY%20ASSAULT',%20'MISDEMEANOR%20ASSAULT',%20'OTHER%20SEX%20OFFENSES',%20'HOMICIDE')";
+var crimeurl = "https://data.oaklandca.gov/resource/ppgh-7dqv.json?$query=SELECT%20datetime,%20policebeat%20WHERE%20crimetype%20in%20" + violent_crime_selection + "AND%20datetime>" + five_years_back + "%20LIMIT%2050000";
 
+// make the api calls
+$.getJSON(dumpurl, function(dumpData) {
+$.getJSON(encampment_url, function(encampmentData) {
+$.getJSON(crimeurl, function(violent_crime) {
+
+
+// load the data
+var encampments =  encampmentData;
+var dumpings = dumpData;
+var crimes = violent_crime;
+
+//create dictionaries with # of occurences per police beat
+let dumping_dict = _.countBy(dumpings, (rec) => {
+        return rec.beat ;
+    });
+
+let encampments_dict = _.countBy(encampments, (rec) => {
+        return rec.beat ;
+    });
+
+let crime_dict = _.countBy(crimes, (rec) => {
+        return rec.policebeat ;
+    });
+
+// fetch our cleaned up geojson and add # of occurences
+$.getJSON("data/PoliceBeatsClean.json", function(beats) {
+
+beats.features.forEach(dothis);
+
+ function dothis(item){
+   item.properties["dumping"] = dumping_dict[item.properties.name]
+   item.properties["encampments"] = encampments_dict[item.properties.name]
+   item.properties["crimes"] = crime_dict[item.properties.name]
+ }
+
+
+
+var map = new mapboxgl.Map({
+  container: 'mapContainer', // HTML container id
+  style: 'mapbox://styles/mapbox/dark-v9', // style URL
+  center: oakCenter, // starting position as [lng, lat]
+  zoom: 10,
+  minZoom: 9,
+  maxZoom: 14,
+  maxBounds: bounds // limit map bounds
+});
+
+
+map.on('load', function() {
+  map.addSource('beats', {
+    type: 'geojson',
+    data: beats,
+  })
+
+
+// add homeless encampments layer
+  map.addLayer({
+    id: 'homeless_encampments',
+    type: 'fill',
+    source: 'beats',
+    'layout': {
+      visibility: 'none', //Layers load invisible, to show only when toggled
+    },
+    paint: {
+      'fill-color': [
+        'interpolate',
+        ['linear'],
+        ['get', 'encampments'],
+        0,
+        '#f6e2ff',
+        300,
+        '#edc4ff',
+        600,
+        '#e19dff',
+        900,
+        '#d26dff',
+        1200,
+        '#c543ff',
+        1500,
+        '#9b00e1',
+      ],
+      'fill-opacity': 0.7
+    }
+  })
+
+// add violent crime layer
     map.addLayer({
       id: 'violent_crime',
       type: 'fill',
-      source: 'oak',
+      source: 'beats',
       'layout': {
         visibility: 'none',
       },
@@ -68,7 +132,7 @@ $.getJSON('./data/oak.geojson', function(rawData) {
         'fill-color': [
           'interpolate',
           ['linear'],
-          ['get', 'viol_crime_count'],
+          ['get', 'crimes'],
           0,
           '#ffd0b5',
           500,
@@ -86,10 +150,11 @@ $.getJSON('./data/oak.geojson', function(rawData) {
       }
     })
 
+// add illegal dumping layer
     map.addLayer({
       id: 'illegal_dumping',
       type: 'fill',
-      source: 'oak',
+      source: 'beats',
       'layout': {
         visibility: 'none',
       },
@@ -97,7 +162,7 @@ $.getJSON('./data/oak.geojson', function(rawData) {
         'fill-color': [
           'interpolate',
           ['linear'],
-          ['get', 'dumping_count'],
+          ['get', 'dumping'],
           0,
           '#f1eef6',
           50,
@@ -137,6 +202,7 @@ $.getJSON('./data/oak.geojson', function(rawData) {
       map.setLayoutProperty('homeless_encampments', 'visibility', 'visible');
       })
 
-
-
+})
+})
+})
 })
