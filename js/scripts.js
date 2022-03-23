@@ -52,9 +52,9 @@ let dumping_dict = _.countBy(dumpings, (rec) => {
     });
 
 let encampments_dict = _.countBy(encampments, (rec) => {
-        return rec.beat ;
+        return rec.beat
+         ;
     });
-
 let crime_dict = _.countBy(crimes, (rec) => {
         return rec.policebeat ;
     });
@@ -68,6 +68,7 @@ beats.features.forEach(dothis);
    item.properties["dumping"] = dumping_dict[item.properties.name]
    item.properties["encampments"] = encampments_dict[item.properties.name]
    item.properties["crimes"] = crime_dict[item.properties.name]
+   console.log(item)
  }
 
 
@@ -113,7 +114,7 @@ map.on('load', function() {
         '#d26dff',
         1200,
         '#c543ff',
-        1500,
+        15000,
         '#9b00e1',
       ],
       'fill-opacity': 0.7
