@@ -9,11 +9,28 @@ const bounds = [
     [-122.0, 37.9] // Northeast coordinates
 ];
 
-// Fetch today's date for API requests
+// Fetch today's date
 var today = new Date();
 var dd = String(today.getDate()).padStart(2, '0');
 var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
 var yyyy = today.getFullYear();
+
+// Get six months ago for another API call
+const getDaysInMonth = (year, month) => new Date(year, month, 0).getDate()
+
+const addMonths = (input, months) => {
+  const date = new Date(input)
+  date.setDate(1)
+  date.setMonth(date.getMonth() + months)
+  date.setDate(Math.min(input.getDate(), getDaysInMonth(date.getFullYear(), date.getMonth()+1)))
+  return date
+}
+
+minusSixMonths = addMonths(new Date(today), -6));
+var dd2 = String(minusSixMonths.getDate()).padStart(2, '0');
+var mm2 = String(minusSixMonths.getMonth() + 1).padStart(2, '0'); //January is 0!
+var yyyy2 = minusSixMonths.getFullYear();
+var six_months_back = "'" + yyyy2 + '-' + mm2 + '-' + dd2 + "'"
 
 // set today's date from 5 years ago
 var yyyy = yyyy-5;
@@ -68,7 +85,7 @@ beats.features.forEach(dothis);
    item.properties["dumping"] = dumping_dict[item.properties.name]
    item.properties["encampments"] = encampments_dict[item.properties.name]
    item.properties["crimes"] = crime_dict[item.properties.name]
-   console.log(item)
+   // console.log(item)
  }
 
 
@@ -180,6 +197,33 @@ map.on('load', function() {
     })
   })
 
+  // When a click event occurs on a feature in the places layer, open a popup at the
+  // location of the feature, with description HTML from its properties.
+  map.on('click', 'illegal_dumping', (e) => {
+  // Copy coordinates array.
+    const lat = e.features[0].properties.lat;
+    const lng = e.features[0].properties.lng;
+    const coordinates = [lng, lat];
+    const beat = e.features[0].properties.cp_beat;
+    const description = "Police beat: " + beat;
+
+    const url = "https://data.oaklandca.gov/resource/quth-gb8e.json?query%20WHERE%20beat='" + beat + "' "
+
+    new mapboxgl.Popup()
+    .setLngLat(coordinates)
+    .setHTML(description)
+    .addTo(map);
+    });
+  //
+  // Change the cursor to a pointer when the mouse is over the places layer.
+  map.on('mouseenter', 'illegal_dumping', () => {
+  map.getCanvas().style.cursor = 'pointer';
+  });
+
+  // Change it back to a pointer when it leaves.
+  map.on('mouseleave', 'illegal_dumping', () => {
+  map.getCanvas().style.cursor = '';
+  });
 
 // Buttons to toggle the visibility of the layers
     $('#illegal-dumping').on('click', function() {
@@ -202,6 +246,8 @@ map.on('load', function() {
       map.setLayoutProperty('violent_crime', 'visibility', 'none');
       map.setLayoutProperty('homeless_encampments', 'visibility', 'visible');
       })
+
+
 
 })
 })
