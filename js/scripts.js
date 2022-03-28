@@ -238,62 +238,74 @@ map.on('load', function() {
       }
 
     var data = [trace1];
+    var layout = {
+      title: 'Beat: '+ beat +' - Monthly Illegal Dumping 311 calls',
+      width : 400,
+      height : 300
+
+    }
 
     const popup = new mapboxgl.Popup()
     .setLngLat(coordinates)
     .setHTML("<div id='myDiv' ></div>")
     .on('open', () => {
-      Plotly.newPlot('myDiv', data,{title: 'Beat: '+ beat +' - Monthly Illegal Dumping 311 calls'}, {staticPlot: true});
+      Plotly.newPlot('myDiv', data, layout, {staticPlot: true});
     })
     .addTo(map);
     })
     });
 
-    // Same for homeless encampments
-    map.on('click', 'homeless_encampments', (e) => {
+  // Same for homeless encampments
+  map.on('click', 'homeless_encampments', (e) => {
 
-    // Copy coordinates array.
-      const coordinates = [e.features[0].properties.lng, e.features[0].properties.lat];
-      if (e.features[0].properties.cp_beat.length < 3){
-        var beat = "0" + e.features[0].properties.cp_beat;
-      } else {
-        var beat = e.features[0].properties.cp_beat;
-      };
+  // Copy coordinates array.
+    const coordinates = [e.features[0].properties.lng, e.features[0].properties.lat];
+    if (e.features[0].properties.cp_beat.length < 3){
+      var beat = "0" + e.features[0].properties.cp_beat;
+    } else {
+      var beat = e.features[0].properties.cp_beat;
+    };
 
-      //make api call for time series
-      const description = "Police beat: " + beat;
-      const encampmentsurl2 = "https://data.oaklandca.gov/resource/quth-gb8e.json?$query=SELECT" + selection2 + "%20WHERE%20beat='" + beat+ "'AND%20description='Homeless%20Encampment'%20" + "AND%20datetimeinit>" + six_months_back + "%20LIMIT%2050000"
-      $.getJSON(encampmentsurl2, function(campTS) {
-      var  campTS = campTS;
+    //make api call for time series
+    const description = "Police beat: " + beat;
+    const encampmentsurl2 = "https://data.oaklandca.gov/resource/quth-gb8e.json?$query=SELECT" + selection2 + "%20WHERE%20beat='" + beat+ "'AND%20description='Homeless%20Encampment'%20" + "AND%20datetimeinit>" + six_months_back + "%20LIMIT%2050000"
+    $.getJSON(encampmentsurl2, function(campTS) {
+    var  campTS = campTS;
 
-      let ts_dict = _.countBy(campTS, (rec) => {
-              var date = new Date(rec.datetimeinit);
-              var mm3 = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
-              var yyyy3 = date.getFullYear();
-              return "'" + mm3 + "-" + yyyy + "'";
-          });
-      // console.log(ts_dict)
+    let ts_dict = _.countBy(campTS, (rec) => {
+            var date = new Date(rec.datetimeinit);
+            var mm3 = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
+            var yyyy3 = date.getFullYear();
+            return "'" + mm3 + "-" + yyyy + "'";
+        });
+    // console.log(ts_dict)
 
-      var trace1 = {
-          type: "scatter",
-          mode: "lines",
-          name: 'AAPL High',
-          x: Object.keys(ts_dict),
-          y: Object.values(ts_dict),
-          line: {color: '#17BECF'}
-        }
+    var trace1 = {
+        type: "scatter",
+        mode: "lines",
+        name: 'AAPL High',
+        x: Object.keys(ts_dict),
+        y: Object.values(ts_dict),
+        line: {color: '#17BECF'}
+      }
 
-      var data = [trace1];
+    var data = [trace1];
+    var layout = {
+      title: 'Beat: '+ beat +' - Monthly Homeless Encampment 311 calls',
+      width : 400,
+      height : 300
 
-      const popup = new mapboxgl.Popup()
-      .setLngLat(coordinates)
-      .setHTML("<div id='myDiv' ></div>")
-      .on('open', () => {
-        Plotly.newPlot('myDiv', data,{title: 'Beat: '+ beat +' - Monthly Homeless Encampment 311 calls'}, {staticPlot: true});
-      })
-      .addTo(map);
-      })
-      });
+    }
+
+    const popup = new mapboxgl.Popup()
+    .setLngLat(coordinates)
+    .setHTML("<div id='myDiv' ></div>")
+    .on('open', () => {
+      Plotly.newPlot('myDiv', data, layout, {staticPlot: true});
+    })
+    .addTo(map);
+    })
+    });
   //
   // Change the cursor to a pointer when the mouse is over the places layer.
   map.on('mouseenter', 'illegal_dumping', () => {
