@@ -26,11 +26,12 @@ const addMonths = (input, months) => {
   return date
 }
 
-minusSixMonths = addMonths(new Date(today), -6));
+var minusSixMonths = addMonths(new Date(today), -6);
 var dd2 = String(minusSixMonths.getDate()).padStart(2, '0');
 var mm2 = String(minusSixMonths.getMonth() + 1).padStart(2, '0'); //January is 0!
 var yyyy2 = minusSixMonths.getFullYear();
 var six_months_back = "'" + yyyy2 + '-' + mm2 + '-' + dd2 + "'"
+console.log(six_months_back);
 
 // set today's date from 5 years ago
 var yyyy = yyyy-5;
@@ -39,6 +40,10 @@ var five_years_back = "'" + yyyy + '-' + mm + '-' + dd + "'";
 // Load data
 // rows to select; part of starturl; DO NOT incorporate into request urls
 var selection = "%20datetimeinit,%20description,%20reqcategory,%20beat";
+
+// for the time series api calls
+var selection2 = "%20datetimeinit,%20beat";
+
 
 // start + end urls
 var starturl = "https://data.oaklandca.gov/resource/quth-gb8e.json?$query=SELECT" + selection + "%20WHERE%20";
@@ -56,6 +61,7 @@ var crimeurl = "https://data.oaklandca.gov/resource/ppgh-7dqv.json?$query=SELECT
 $.getJSON(dumpurl, function(dumpData) {
 $.getJSON(encampment_url, function(encampmentData) {
 $.getJSON(crimeurl, function(violent_crime) {
+
 
 
 // load the data
@@ -87,7 +93,6 @@ beats.features.forEach(dothis);
    item.properties["crimes"] = crime_dict[item.properties.name]
    // console.log(item)
  }
-
 
 
 var map = new mapboxgl.Map({
@@ -200,20 +205,95 @@ map.on('load', function() {
   // When a click event occurs on a feature in the places layer, open a popup at the
   // location of the feature, with description HTML from its properties.
   map.on('click', 'illegal_dumping', (e) => {
+
   // Copy coordinates array.
-    const lat = e.features[0].properties.lat;
-    const lng = e.features[0].properties.lng;
-    const coordinates = [lng, lat];
-    const beat = e.features[0].properties.cp_beat;
+    const coordinates = [e.features[0].properties.lng, e.features[0].properties.lat];
+    if (e.features[0].properties.cp_beat.length < 3){
+      var beat = "0" + e.features[0].properties.cp_beat;
+    } else {
+      var beat = e.features[0].properties.cp_beat;
+    };
+
+    //make api call for time series
     const description = "Police beat: " + beat;
+    const dumpurl2 = "https://data.oaklandca.gov/resource/quth-gb8e.json?$query=SELECT" + selection2 + "%20WHERE%20beat='" + beat+ "'AND%20reqcategory='ILLDUMP'%20" + "AND%20datetimeinit>" + six_months_back + "%20LIMIT%2050000"
+    $.getJSON(dumpurl2, function(dumpTS) {
+    var  dumpTS = dumpTS;
 
-    const url = "https://data.oaklandca.gov/resource/quth-gb8e.json?query%20WHERE%20beat='" + beat + "' "
+    let ts_dict = _.countBy(dumpTS, (rec) => {
+            var date = new Date(rec.datetimeinit);
+            var mm3 = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
+            var yyyy3 = date.getFullYear();
+            return "'" + mm3 + "-" + yyyy + "'";
+        });
+    // console.log(ts_dict)
 
-    new mapboxgl.Popup()
+    var trace1 = {
+        type: "scatter",
+        mode: "lines",
+        name: 'AAPL High',
+        x: Object.keys(ts_dict),
+        y: Object.values(ts_dict),
+        line: {color: '#17BECF'}
+      }
+
+    var data = [trace1];
+
+    const popup = new mapboxgl.Popup()
     .setLngLat(coordinates)
-    .setHTML(description)
+    .setHTML("<div id='myDiv' ></div>")
+    .on('open', () => {
+      Plotly.newPlot('myDiv', data,{title: 'Beat: '+ beat +' - Monthly Illegal Dumping 311 calls'}, {staticPlot: true});
+    })
     .addTo(map);
+    })
     });
+
+    // Same for homeless encampments
+    map.on('click', 'homeless_encampments', (e) => {
+
+    // Copy coordinates array.
+      const coordinates = [e.features[0].properties.lng, e.features[0].properties.lat];
+      if (e.features[0].properties.cp_beat.length < 3){
+        var beat = "0" + e.features[0].properties.cp_beat;
+      } else {
+        var beat = e.features[0].properties.cp_beat;
+      };
+
+      //make api call for time series
+      const description = "Police beat: " + beat;
+      const encampmentsurl2 = "https://data.oaklandca.gov/resource/quth-gb8e.json?$query=SELECT" + selection2 + "%20WHERE%20beat='" + beat+ "'AND%20description='Homeless%20Encampment'%20" + "AND%20datetimeinit>" + six_months_back + "%20LIMIT%2050000"
+      $.getJSON(encampmentsurl2, function(campTS) {
+      var  campTS = campTS;
+
+      let ts_dict = _.countBy(campTS, (rec) => {
+              var date = new Date(rec.datetimeinit);
+              var mm3 = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
+              var yyyy3 = date.getFullYear();
+              return "'" + mm3 + "-" + yyyy + "'";
+          });
+      // console.log(ts_dict)
+
+      var trace1 = {
+          type: "scatter",
+          mode: "lines",
+          name: 'AAPL High',
+          x: Object.keys(ts_dict),
+          y: Object.values(ts_dict),
+          line: {color: '#17BECF'}
+        }
+
+      var data = [trace1];
+
+      const popup = new mapboxgl.Popup()
+      .setLngLat(coordinates)
+      .setHTML("<div id='myDiv' ></div>")
+      .on('open', () => {
+        Plotly.newPlot('myDiv', data,{title: 'Beat: '+ beat +' - Monthly Homeless Encampment 311 calls'}, {staticPlot: true});
+      })
+      .addTo(map);
+      })
+      });
   //
   // Change the cursor to a pointer when the mouse is over the places layer.
   map.on('mouseenter', 'illegal_dumping', () => {
@@ -246,8 +326,6 @@ map.on('load', function() {
       map.setLayoutProperty('violent_crime', 'visibility', 'none');
       map.setLayoutProperty('homeless_encampments', 'visibility', 'visible');
       })
-
-
 
 })
 })
