@@ -179,7 +179,7 @@ map.on('load', function() {
       type: 'fill',
       source: 'beats',
       'layout': {
-        visibility: 'none',
+        visibility: 'visible',
       },
       paint: {
         'fill-color': [
@@ -214,7 +214,7 @@ map.on('load', function() {
       var beat = e.features[0].properties.cp_beat;
     };
 
-    //make api call for time series
+    //make api call for dumping time series
     const description = "Police beat: " + beat;
     const dumpurl2 = "https://data.oaklandca.gov/resource/quth-gb8e.json?$query=SELECT" + selection2 + "%20WHERE%20beat='" + beat+ "'AND%20reqcategory='ILLDUMP'%20" + "AND%20datetimeinit>" + six_months_back + "%20LIMIT%2050000"
     $.getJSON(dumpurl2, function(dumpTS) {
@@ -306,17 +306,101 @@ map.on('load', function() {
     .addTo(map);
     })
     });
+  
+  // When a click event occurs on a feature in the places layer, open a popup at the
+  // location of the feature, with description HTML from its properties.
+  map.on('click', 'violent_crime', (e) => {
+
+    // Copy coordinates array.
+      const coordinates = [e.features[0].properties.lng, e.features[0].properties.lat];
+      
+      if (e.features[0].properties.cp_beat.length < 3){
+        var beat = "0" + e.features[0].properties.cp_beat;
+      } else {
+        var beat = e.features[0].properties.cp_beat;
+      };
+      
+      console.log(beat)
+
+      //make api call for dumping time series
+      const description = "Police beat: " + beat;
+
+      const crimeurl2 = "https://data.oaklandca.gov/resource/ppgh-7dqv.json?$query=SELECT%20datetime,%20policebeat%20WHERE%20policebeat='" + beat+ "'AND%20crimetype%20in%20" + violent_crime_selection + "%20AND%20datetime>" + six_months_back + "%20LIMIT%2050000"
+      $.getJSON(crimeurl2, function(crimeTS) {
+      var  crimeTS = crimeTS;
+  
+      let ts_dict = _.countBy(crimeTS, (rec) => {
+              var date = new Date(rec.datetime);
+              var mm3 = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
+              var yyyy3 = date.getFullYear();
+              return "'" + mm3 + "-" + yyyy + "'";
+          });
+      // console.log(ts_dict)
+  
+      var trace1 = {
+          type: "scatter",
+          mode: "lines",
+          name: 'AAPL High',
+          x: Object.keys(ts_dict),
+          y: Object.values(ts_dict),
+          line: {color: '#17BECF'}
+        }
+  
+      var data = [trace1];
+      var layout = {
+        title: {
+          text: 'Beat: '+ beat +' - Monthly Reported incidents of violent crime',
+          font: {
+            family: 'Courier New, monospace',
+            size: 14
+          },
+          xref: 'paper',
+          x: 0.05,
+        }
+        // width : 300,
+        // height : 200
+  
+      }
+  
+
+      const popup = new mapboxgl.Popup()
+      .setLngLat(coordinates)
+      .setHTML("<div id='myDiv' ></div>")
+      .on('open', () => {
+        Plotly.newPlot('myDiv', data, layout, {staticPlot: true});
+      })
+      .addTo(map);
+      })
+      });
+    
   //
   // Change the cursor to a pointer when the mouse is over the places layer.
   map.on('mouseenter', 'illegal_dumping', () => {
-  map.getCanvas().style.cursor = 'pointer';
+    map.getCanvas().style.cursor = 'pointer';
   });
+
+  map.on('mouseenter', 'homeless_encampments', () => {
+    map.getCanvas().style.cursor = 'pointer';
+    });
+
+  map.on('mouseenter', 'violent_crime', () => {
+    map.getCanvas().style.cursor = 'pointer';
+    });
 
   // Change it back to a pointer when it leaves.
   map.on('mouseleave', 'illegal_dumping', () => {
   map.getCanvas().style.cursor = '';
   });
 
+  // Change it back to a pointer when it leaves.
+  map.on('mouseleave', 'homeless_encampments', () => {
+  map.getCanvas().style.cursor = '';
+  });
+
+  // Change it back to a pointer when it leaves.
+  map.on('mouseleave', 'violent_crime', () => {
+  map.getCanvas().style.cursor = '';
+  });
 // Buttons to toggle the visibility of the layers
     $('#illegal-dumping').on('click', function() {
       // when this is clicked, let's fly the map to Midtown Manhattan
