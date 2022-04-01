@@ -37,6 +37,9 @@ console.log(six_months_back);
 var yyyy = yyyy-5;
 var five_years_back = "'" + yyyy + '-' + mm + '-' + dd + "'";
 
+// for TS api call
+var today = "'" + today.getFullYear()  + "-" + String(today.getMonth() + 1).padStart(2, '0') + "-" + String(today.getDate()).padStart(2, '0') + "'";
+
 // Load data
 // rows to select; part of starturl; DO NOT incorporate into request urls
 var selection = "%20datetimeinit,%20description,%20reqcategory,%20beat";
@@ -216,15 +219,15 @@ map.on('load', function() {
 
     //make api call for dumping time series
     const description = "Police beat: " + beat;
-    const dumpurl2 = "https://data.oaklandca.gov/resource/quth-gb8e.json?$query=SELECT" + selection2 + "%20WHERE%20beat='" + beat+ "'AND%20reqcategory='ILLDUMP'%20" + "AND%20datetimeinit>" + six_months_back + "%20LIMIT%2050000"
+    const dumpurl2 = "https://data.oaklandca.gov/resource/quth-gb8e.json?$query=SELECT" + selection2 + "%20WHERE%20beat='" + beat+ "'AND%20reqcategory='ILLDUMP'%20AND%20datetimeinit%20between%20" + six_months_back + "%20and%20" + today + "%20ORDER%20BY%20datetimeinit%20ASC%20LIMIT%2050000"
     $.getJSON(dumpurl2, function(dumpTS) {
     var  dumpTS = dumpTS;
 
     let ts_dict = _.countBy(dumpTS, (rec) => {
             var date = new Date(rec.datetimeinit);
-            var mm3 = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
-            var yyyy3 = date.getFullYear();
-            return "'" + mm3 + "-" + yyyy + "'";
+            var mm = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
+            var yyyy = date.getFullYear();
+            return  "'" + yyyy + "-" + mm + "'";
         });
     // console.log(ts_dict)
 
@@ -238,22 +241,43 @@ map.on('load', function() {
       }
 
     var data = [trace1];
-    var layout = {
-      title: 'Beat: '+ beat +' - Monthly Illegal Dumping 311 calls',
-      width : 400,
-      height : 300
 
+    var layout = {
+      title: {
+        text: 'Beat: '+ beat +' - 311 Calls',
+        font: {
+          family: 'Proxima nova',
+          size: 12
+        },
+        xref: 'paper',
+        x: -0.1,
+      },
+      xaxis: {
+        tickangle: 90,
+        },
+      showgrid: false,
+      width : 250,
+      height : 300,
+      margin: {
+        l: 20,
+        r: 10,
+        b: 70,
+        t: 50,
+        pad: 0
+      }
     }
 
-    const popup = new mapboxgl.Popup()
+    const popup = new mapboxgl.Popup({ closeOnClick: true })
     .setLngLat(coordinates)
-    .setHTML("<div id='myDiv' ></div>")
+    .setHTML("<div id='myDiv'  padding-top: 0px; padding-right: 10px; padding-bottom: 0px; padding-left: 0px;></div>")
     .on('open', () => {
       Plotly.newPlot('myDiv', data, layout, {staticPlot: true});
     })
+    .setMaxWidth("300px")
     .addTo(map);
     })
     });
+
 
   // Same for homeless encampments
   map.on('click', 'homeless_encampments', (e) => {
@@ -268,15 +292,15 @@ map.on('load', function() {
 
     //make api call for time series
     const description = "Police beat: " + beat;
-    const encampmentsurl2 = "https://data.oaklandca.gov/resource/quth-gb8e.json?$query=SELECT" + selection2 + "%20WHERE%20beat='" + beat+ "'AND%20description='Homeless%20Encampment'%20" + "AND%20datetimeinit>" + six_months_back + "%20LIMIT%2050000"
+    const encampmentsurl2 = "https://data.oaklandca.gov/resource/quth-gb8e.json?$query=SELECT" + selection2 + "%20WHERE%20beat='" + beat+ "'AND%20description='Homeless%20Encampment'%20AND%20datetimeinit%20between%20" + six_months_back + "%20and%20" + today + "%20ORDER%20BY%20datetimeinit%20ASC%20LIMIT%2050000"
     $.getJSON(encampmentsurl2, function(campTS) {
     var  campTS = campTS;
 
     let ts_dict = _.countBy(campTS, (rec) => {
             var date = new Date(rec.datetimeinit);
-            var mm3 = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
-            var yyyy3 = date.getFullYear();
-            return "'" + mm3 + "-" + yyyy + "'";
+            var mm = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
+            var yyyy = date.getFullYear();
+            return  "'" + yyyy + "-" + mm + "'";
         });
     // console.log(ts_dict)
 
@@ -291,52 +315,73 @@ map.on('load', function() {
 
     var data = [trace1];
     var layout = {
-      title: 'Beat: '+ beat +' - Monthly Homeless Encampment 311 calls',
-      width : 400,
-      height : 300
-
+      title: {
+        text: 'Beat: '+ beat +' - 311 Calls',
+        font: {
+          family: 'Proxima nova',
+          size: 12
+        },
+        xref: 'paper',
+        x: -0.1,
+      },
+      xaxis: {
+        tickangle: 90,
+        },
+      showgrid: false,
+      width : 250,
+      height : 300,
+      margin: {
+        l: 20,
+        r: 10,
+        b: 70,
+        t: 50,
+        pad: 0
+      }
     }
 
-    const popup = new mapboxgl.Popup()
+    const popup = new mapboxgl.Popup({ closeOnClick: true })
     .setLngLat(coordinates)
-    .setHTML("<div id='myDiv' ></div>")
+    .setHTML("<div id='myDiv' padding-top: 0px; padding-right: 10px; padding-bottom: 0px; padding-left: 0px;></div>")
     .on('open', () => {
       Plotly.newPlot('myDiv', data, layout, {staticPlot: true});
     })
+    .setMaxWidth("300px")
     .addTo(map);
     })
     });
-  
+
+
   // When a click event occurs on a feature in the places layer, open a popup at the
   // location of the feature, with description HTML from its properties.
   map.on('click', 'violent_crime', (e) => {
 
     // Copy coordinates array.
       const coordinates = [e.features[0].properties.lng, e.features[0].properties.lat];
-      
+
       if (e.features[0].properties.cp_beat.length < 3){
         var beat = "0" + e.features[0].properties.cp_beat;
       } else {
         var beat = e.features[0].properties.cp_beat;
       };
-      
+
       console.log(beat)
 
       //make api call for dumping time series
       const description = "Police beat: " + beat;
 
-      const crimeurl2 = "https://data.oaklandca.gov/resource/ppgh-7dqv.json?$query=SELECT%20datetime,%20policebeat%20WHERE%20policebeat='" + beat+ "'AND%20crimetype%20in%20" + violent_crime_selection + "%20AND%20datetime>" + six_months_back + "%20LIMIT%2050000"
+      const crimeurl2 = "https://data.oaklandca.gov/resource/ppgh-7dqv.json?$query=SELECT%20datetime,%20policebeat%20WHERE%20policebeat='" + beat+ "'AND%20crimetype%20in%20" + violent_crime_selection + "%20AND%20datetime%20between%20" + six_months_back + "%20and%20" + today + "%20ORDER%20BY%20datetime%20ASC%20LIMIT%2050000"
       $.getJSON(crimeurl2, function(crimeTS) {
       var  crimeTS = crimeTS;
-  
+
       let ts_dict = _.countBy(crimeTS, (rec) => {
               var date = new Date(rec.datetime);
-              var mm3 = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
-              var yyyy3 = date.getFullYear();
-              return "'" + mm3 + "-" + yyyy + "'";
+              var mm = String(date.getMonth() + 1).padStart(2, '0'); //January is 0!
+              var yyyy = date.getFullYear();
+              console.log(yyyy + "-" + mm);
+              return  "'" + yyyy + "-" + mm + "'";
           });
       // console.log(ts_dict)
-  
+
       var trace1 = {
           type: "scatter",
           mode: "lines",
@@ -345,34 +390,46 @@ map.on('load', function() {
           y: Object.values(ts_dict),
           line: {color: '#17BECF'}
         }
-  
+
       var data = [trace1];
       var layout = {
         title: {
-          text: 'Beat: '+ beat +' - Monthly Reported incidents of violent crime',
+          text: 'Beat: '+ beat +' - Reported incidents',
           font: {
-            family: 'Courier New, monospace',
-            size: 14
+            family: 'Proxima nova',
+            size: 12
           },
           xref: 'paper',
-          x: 0.05,
+          x: -0.1,
+        },
+        xaxis: {
+          tickangle: 90,
+          },
+        showgrid: false,
+        width : 250,
+        height : 300,
+        margin: {
+          l: 20,
+          r: 10,
+          b: 70,
+          t: 50,
+          pad: 0
         }
-        // width : 300,
-        // height : 200
-  
-      }
-  
 
-      const popup = new mapboxgl.Popup()
+      }
+
+
+      const popup = new mapboxgl.Popup({ closeOnClick: true })
       .setLngLat(coordinates)
-      .setHTML("<div id='myDiv' ></div>")
+      .setHTML("<div id='myDiv' padding-top: 0px; padding-right: 10px; padding-bottom: 0px; padding-left: 0px;></div>")
+      .setMaxWidth("300px")
       .on('open', () => {
         Plotly.newPlot('myDiv', data, layout, {staticPlot: true});
       })
       .addTo(map);
       })
       });
-    
+
   //
   // Change the cursor to a pointer when the mouse is over the places layer.
   map.on('mouseenter', 'illegal_dumping', () => {

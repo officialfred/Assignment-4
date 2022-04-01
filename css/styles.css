@@ -4,48 +4,64 @@
 }
 
 html, body {
-  margin: 0;
+  /* margin: 10px; */
+  padding: 5px 10px;
   height: 100%;
-  font-family: sans-serif;
+  font-family: "Lucida Console", monospace;
+  font-size: 17px;
+
 }
 
 .container {
   display: flex;
   height: 100%;
+
 }
 
 .sidebar {
-  width: 450px;
+  width: 600px;
   height: 100%;
   padding: 0px;
+  justify-content: center;
 }
 
 .sidebar h3 {
-  font-size: 30px;
-  text-align: center;
+  font-size: 23px;
+  font-family: "Lucida Console", monospace;
+  text-align: left;
 }
 
 
 .btn-group button {
+  margin: 10px;
+  position: relative;
+  top: 50%;
+  left: 46%;
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, 60%);
+
   background-color: #7f7f7f; /* Green background */
   border: 1px solid #878787; /* Green border */
   font-weight: bold;
+  font-family: "Lucida Console", monospace;
+  font-size: 17px;
   color: white; /* White text */
-  margin: 0px;
+  /* margin: 0px; */
   padding: 10px 10px; /* Some padding */
   cursor: pointer; /* Pointer/hand icon */
-  float: left; /* Float the buttons side by side */
-}
+  text-align: center;
+  display: block; /* Make the buttons appear below each other */
 
-.btn-group button:not(:last-child) {
-  border-right: none; /* Prevent double borders */
 }
-
 /* Clear floats (clearfix hack) */
 .btn-group:after {
   content: "";
   clear: both;
   display: table;
+}
+
+.btn-group button:last-child {
+  margin-bottom: 40px; /* extra margin for the text */
 }
 
 /* Add a background color on hover */
