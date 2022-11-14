@@ -1,12 +1,23 @@
 mapboxgl.accessToken = 'pk.eyJ1IjoiY3dob25nIiwiYSI6IjAyYzIwYTJjYTVhMzUxZTVkMzdmYTQ2YzBmMTM0ZDAyIn0.owNd_Qa7Sw2neNJbK6zc1A'
 
+function PopUp(hideOrshow) {
+  if (hideOrshow == 'hide') document.getElementById('ac-wrapper').style.display = "none";
+  else document.getElementById('ac-wrapper').removeAttribute('style');
+}
+
+window.onload = function () {
+  setTimeout(function () {
+      PopUp('show');
+  }, 100);
+}
+
 // lngLat for the Downtown Oakland
 var oakCenter = [-122.2712, 37.76];
 
 // Set bounds to Oakland.
 const bounds = [
-    [-122.5, 37.6], // Southwest coordinates
-    [-122.0, 37.9] // Northeast coordinates
+    [-122.46, 37.62], // Southwest coordinates
+    [-122.04, 37.890298721544674] // Northeast coordinates
 ];
 
 // Fetch today's date
@@ -105,7 +116,9 @@ var map = new mapboxgl.Map({
   zoom: 10,
   minZoom: 9,
   maxZoom: 14,
+  dragPan: false,
   maxBounds: bounds // limit map bounds
+
 });
 
 
@@ -217,6 +230,8 @@ map.on('load', function() {
       var beat = e.features[0].properties.cp_beat;
     };
 
+    console.log(coordinates[1])
+
     //make api call for dumping time series
     const description = "Police beat: " + beat;
     const dumpurl2 = "https://data.oaklandca.gov/resource/quth-gb8e.json?$query=SELECT" + selection2 + "%20WHERE%20beat='" + beat+ "'AND%20reqcategory='ILLDUMP'%20AND%20datetimeinit%20between%20" + six_months_back + "%20and%20" + today + "%20ORDER%20BY%20datetimeinit%20ASC%20LIMIT%2050000"
@@ -267,7 +282,11 @@ map.on('load', function() {
       }
     }
 
-    const popup = new mapboxgl.Popup({ closeOnClick: true })
+    if (coordinates[1] >= 37.751274425829386){
+      var anchor = 'top-right'
+    } else { var anchor = 'bottom-right'};
+
+    const popup = new mapboxgl.Popup({ closeOnClick: true , anchor: anchor})
     .setLngLat(coordinates)
     .setHTML("<div id='myDiv'  padding-top: 0px; padding-right: 10px; padding-bottom: 0px; padding-left: 0px;></div>")
     .on('open', () => {
@@ -339,7 +358,11 @@ map.on('load', function() {
       }
     }
 
-    const popup = new mapboxgl.Popup({ closeOnClick: true })
+    if (coordinates[1] >= 37.751274425829386){
+      var anchor = 'top-right'
+    } else { var anchor = 'bottom-right'};
+
+    const popup = new mapboxgl.Popup({ closeOnClick: true, anchor : anchor })
     .setLngLat(coordinates)
     .setHTML("<div id='myDiv' padding-top: 0px; padding-right: 10px; padding-bottom: 0px; padding-left: 0px;></div>")
     .on('open', () => {
@@ -419,7 +442,11 @@ map.on('load', function() {
       }
 
 
-      const popup = new mapboxgl.Popup({ closeOnClick: true })
+      if (coordinates[1] >= 37.751274425829386){
+        var anchor = 'top-right'
+      } else { var anchor = 'bottom-right'};
+
+      const popup = new mapboxgl.Popup({ closeOnClick: true, anchor : anchor })
       .setLngLat(coordinates)
       .setHTML("<div id='myDiv' padding-top: 0px; padding-right: 10px; padding-bottom: 0px; padding-left: 0px;></div>")
       .setMaxWidth("300px")
